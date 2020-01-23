@@ -30,9 +30,13 @@ module.exports = (sequelize, DataTypes) => {
         len: [6,16],
       }
     },
-    passwordHash: {
+    password: {
       type: DataTypes.STRING,
       allowNull: false,
+      field: 'passwordHash',
+      set (val) {
+        this.setDataValue('password', bcrypt.hashSync(val, 10));
+      }
     }
   }, {});
   User.associate = function(models) {

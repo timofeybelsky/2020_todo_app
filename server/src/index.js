@@ -1,45 +1,85 @@
-const { User } = require('./db/models');
-const bcrypt = require('bcrypt');
+import { User, sequelize } from './db/models';
+import { Model, DataTypes } from 'sequelize';
+import moment from 'moment';
 
-const hashPassword = async password => {
-  try {
-    return bcrypt.hash(password, 10);
-  } catch (e) {
+class Task extends Model {
 
-  }
+}
+
+Task.init({
+            value: {
+              type: DataTypes.STRING,
+              allowNull: false,
+              validate: {
+                notEmpty: true
+              }
+            },
+            deadline: {
+              type: DataTypes.DATE,
+              allowNull: false,
+              validate: {
+                isDate: true,
+                isAfter: new Date(),
+              }
+            },
+            isDone: {
+              type: DataTypes.BOOLEAN,
+              defaultValue: false,
+              allowNull: false,
+            }
+          }, {
+            sequelize,
+            timestamps: true,
+          });
+
+// Tasks n:1 Users
+
+Task.belongsTo(User, {
+  foreignKey: {
+    name: 'ownerId'
+  },
+});
+User.hasMany(Task, {
+  foreignKey: {
+    name: 'ownerId'
+  },
+});
+
+Task.sync({
+            force: true,
+          });
+
+//---
+
+class Role extends Model {
+}
+
+Role.init({
+            name: {
+              type: DataTypes.STRING,
+              unique: true,
+              allowNull: false
+            },
+          }, {
+            sequelize,
+          });
+
+class UserRoles extends Model {
+
 };
 
-const createUser = async data => {
-  try {
+UserRoles.init({
 
-    data.passwordHash = await hashPassword(data.password);
-    const createdUser = await User.create(data);
-    if (createdUser) {
-      return createdUser.get();
-    }
-    new Error();
-  } catch (e) {
-    throw e;
-  }
-};
+               }, {
+  sequelize,
+});
 
-const getUserById = async id => {
-  try {
-    return (await User.findByPk(id)).get();
-  } catch (e) {
-    throw e;
-  }
-};
+Role.belongsToMany(User, {
+  through: 'UserRoles',
+});
 
-/*
-createUser({
-             firstName: 'Name',
-             lastName: 'Surname',
-             email: 'test_test12',
-             password: 'teh1234_ytI'
-           })
-  .then(console.log)
-  .catch(console.err);
-*/
+User.belongsToMany(Role, {
+  through: 'UserRoles',
+});
 
-getUserById(99).then(console.log).catch(console.error);
+Role.sync();
